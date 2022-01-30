@@ -8,8 +8,9 @@
       parent space) or "private", the role name can be set (or be "none") if
       the room is private, and the parent space (as an internal ID) is an
       optional space to create this new one in. If the space is private,
-      creates a welcome room attached to it. Prints the new space internal ID,
-      and the new welcome room ID, if applicable
+      creates a welcome room attached to it (at the same level). Applies the
+      default powerlevels. Prints the new space internal ID, and the new
+      welcome room ID, if applicable
     - name <space_id> <name>: changes the name of the space
     - description <space_id> <desc>: changes the description of a space
     - image <space_id> <mxc_id>: changes the image of the space
@@ -26,7 +27,8 @@
       database). Visibility is one of "public", "space" (only if it has a
       parent space) or "private", the role name can be set (or be "none") if
       the room is private, and the parent space (as an internal ID) is an
-      optional space to create this room in. Prints the new room internal ID.
+      optional space to create this room in. Applies the default powerlevels.
+      Prints the new room internal ID.
     - name <room_id> <name>: changes the name of the room
     - description <room_id> <desc>: changes the description of a room
     - image <room_id> <mxc_id>: changes the image of the room
@@ -125,5 +127,30 @@ language: fr
 confirmation_emojis:
     accept: ✅
     cancel: ❌
+admin_command_max_duration: 1h
+admin_command_powerlevel: 50
+default_matrix_perms:
+    users_default: 0
+    events:
+        m.room.name: 100
+        m.room.power_levels: 100
+        m.room.history_visibility: 100
+        m.room.canonical_alias: 50
+        m.room.avatar: 50
+        m.room.tombstone: 100
+        m.room.server_acl: 100
+        m.room.encryption: 100
+        m.space.child: 50
+        m.room.topic: 50
+        m.room.pinned_events: 50
+        m.reaction: 0
+        im.vector.modular.widgets: 50
+    events_default: 0
+    state_default: 50
+    ban: 50
+    kick: 50
+    redact: 50
+    invite: 50
+    historical: 100
 ```
     
