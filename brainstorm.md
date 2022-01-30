@@ -79,10 +79,14 @@
       this role, or it isn’t used as a required role or admin role anywhere. If
       there are role menus containing this role, they’re deactivated and the
       bots warns the user about them.
-    - assign <user> <role>: adds the requested role to the user. The issuer
-      must have the admin role of the category
-    - unassign <user> <role>: removes the requested role for the user. The
-      issuer must have the admin role of the category
+    - assign <user> <role> <space>: adds the requested role to the user, in the
+      given space if needed (aka if the role isn’t transient). The issuer
+      must have the admin role of the category, and have the space
+      required_role if needed
+    - unassign <user> <role> <space>: removes the requested role for the user,
+      in the given space if needed (aka if the role isn’t transient). The
+      issuer must have the admin role of the category, and have the space
+      required_role if needed
     - menu <role_category> <room> <prompt>: prints the role chooser menu in the
       chosen room, and listen to reacts to assign roles. If an existing menu
       for this category and this room exists, it’s deactivated
