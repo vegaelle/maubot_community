@@ -15,6 +15,10 @@
     - description <space_id> <desc>: changes the description of a space
     - image <space_id> <mxc_id>: changes the image of the space
     - required_role <space_id> <role>: changes the required role of the space
+    - welcome_room <space_id> <room_id>: sets the specified room as the welcome
+      room of the space (in which newcomers can be invited in the space). If
+      the room_id is omitted, changes the space so it doesn’t have any welcome
+      room
     - visibility <space_id> <visibility>: changes the visibility. If already
       private, it can’t be set back to public or space
     - info <space_id>: prints information about a space (including its
