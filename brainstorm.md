@@ -45,6 +45,8 @@
 - !role_category
     - add <name> <admin_role> <parent>: creates a role category. The user must
       have the admin_role of the parent category if applicable
+    - add_transient <name> <admin_role> <parent>: creates a transient role category.
+      Same rules as `!role_category add`
     - set_parent <name> <parent>: changes the hierarchy of the category. If the
       new parent is not "none", the user must be part of the parent’s
       admin_role
@@ -160,5 +162,7 @@ default_matrix_perms:
     redact: 50
     invite: 50
     historical: 100
+superusers:
+    - @example:instance.tld
 ```
     
