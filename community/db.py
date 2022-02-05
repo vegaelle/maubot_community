@@ -3,7 +3,7 @@ import tempfile
 import os
 
 from sqlalchemy.engine.base import Engine
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import sessionmaker
 from maubot.loader import BasePluginLoader
 from alembic.config import Config
 from alembic.script import ScriptDirectory
@@ -87,4 +87,4 @@ class CommunityDatabase:
                 destination_rev=revision,
                 tag=None,
             ):
-                from .alembic import env
+                from .alembic import env as _

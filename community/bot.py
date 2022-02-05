@@ -10,8 +10,8 @@ from mautrix.types import UserID, RoomCreatePreset, EventID
 from sqlalchemy.exc import IntegrityError
 
 from .db import CommunityDatabase
-from .utils import CommunityConfig, emoji_argument
-from . import models
+from .utils import CommunityConfig, emoji_argument, arguments, Argument
+from . import validators, models
 
 
 class CommunityPlugin(Plugin):
@@ -77,56 +77,22 @@ class CommunityPlugin(Plugin):
         await self._send_direct_message(evt.sender, roles_txt)
 
     @command.new(name="role_category", require_subcommand=True)
-    async def role_category(self, evt: MaubotMessageEvent):
+    async def role_category(self, _: MaubotMessageEvent):
         pass
 
     async def create_rolecategory(
         self,
         evt: MaubotMessageEvent,
         name: str,
-        admin_role: str,
-        parent: Optional[str],
+        admin_role: models.Role,
+        parent: Optional[models.RoleCategory],
         transient: bool,
     ):
 
-        if not self.db.user.from_mxid(evt.sender).has_perm("add", "rolecategory"):
-            await evt.reply(_("You do not have the permission to do this"))
-            return
         author = self.db.user.get_or_create(matrix_id=evt.sender)
-        author_roles = self.db.user.get_roles(evt.sender)
-        parent_category = None
-        if parent:
-            parent_category = self.db.rolecategory.get(name=parent)
-            if not parent_category:
-                await evt.reply(
-                    _("Category {category} not " "found").format(category=parent)
-                )
-                return
-            if parent_category.admin_role not in author_roles and not self.is_superuser(
-                evt.sender
-            ):
-                await evt.reply(
-                    _(
-                        "You must be in the {role} role to add children to the "
-                        "{category} category"
-                    ).format(role=parent_category.admin_role, category=parent_category)
-                )
-                return
-        new_admin_role = self.db.role.get(name=admin_role)
-        if not new_admin_role:
-            await evt.reply(_("The role {role} does not exist").format(role=admin_role))
-            return
-        if new_admin_role not in author_roles and not self.is_superuser(evt.sender):
-            await evt.reply(
-                _("You must be in the {role} role to add a new category").format(
-                    role=new_admin_role
-                )
-            )
-            return
-
         try:
             self.db.rolecategory.create(
-                name, new_admin_role, parent_category, transient, author
+                name, admin_role, parent, transient, author
             )
         except IntegrityError:
             self.db.session.rollback()
@@ -139,60 +105,69 @@ class CommunityPlugin(Plugin):
         )
 
     @role_category.subcommand(name="add", help=_("Create a new role category"))
-    @command.argument("name", "category name")
-    @command.argument("admin_role", "admin role name")
-    @command.argument("parent", "parent category name", required=False)
+    @arguments(
+        "add_rolecategory",
+        name=Argument("category name"),
+        admin_role=Argument(
+            "admin role name", validator=validators.valid_author_role
+        ),
+        parent=Argument(
+            "parent category name",
+            required=False,
+            validator=validators.valid_rolecategory,
+        ),
+    )
     async def role_category_add(
-        self, evt: MaubotMessageEvent, name: str, admin_role: str, parent: Optional[str]
+        self, evt: MaubotMessageEvent, name: str, admin_role: models.Role, parent:
+        Optional[models.RoleCategory]
     ):
         await self.create_rolecategory(evt, name, admin_role, parent, False)
 
     @role_category.subcommand(
         name="add_transient", help=_("Create a new transient role category")
     )
-    @command.argument("name", "category name")
-    @command.argument("admin_role", "admin role name")
-    @command.argument("parent", "parent category name", required=False)
+    @arguments(
+        "add_rolecategory",
+        name=Argument("category name"),
+        admin_role=Argument(
+            "admin role name", validator=validators.valid_author_role
+        ),
+        parent=Argument(
+            "parent category name",
+            required=False,
+            validator=validators.valid_rolecategory,
+        ),
+    )
     async def role_category_add_transient(
-        self, evt: MaubotMessageEvent, name: str, admin_role: str, parent: Optional[str]
+        self, evt: MaubotMessageEvent, name: str, admin_role: models.Role, parent:
+        Optional[models.RoleCategory]
     ):
         await self.create_rolecategory(evt, name, admin_role, parent, True)
 
     @command.new(name="role", require_subcommand=True)
-    async def role(self, evt: MaubotMessageEvent):
+    async def role(self, _: MaubotMessageEvent):
         pass
 
     @role.subcommand(name="add", help=_("Create a new role"))
-    @command.argument("name", "role name")
-    @command.argument("emoji", parser=emoji_argument)
-    @command.argument("category", "category name")
+    @arguments(
+        "add_role",
+        name=Argument("role name"),
+        emoji=Argument(
+            parser=emoji_argument
+        ),
+        category=Argument(
+            required=False,
+            validator=validators.valid_rolecategory,
+        ),
+    )
     async def role_add(
-        self, evt: MaubotMessageEvent, name: str, emoji: str, category: Optional[str]
+        self, evt: MaubotMessageEvent, name: str, emoji: str, category:
+        Optional[models.RoleCategory]
     ):
-        if not self.db.user.from_mxid(evt.sender).has_perm("add", "role"):
-            await evt.reply(_("You do not have the permission to do this"))
-            return
         author = self.db.user.get_or_create(matrix_id=evt.sender)
-        author_roles = self.db.user.get_roles(evt.sender)
-        parent_category = self.db.rolecategory.get(name=category)
-        if not parent_category:
-            await evt.reply(
-                _("Category {category} not found").format(category=category)
-            )
-            return
-        if parent_category.admin_role not in author_roles and not self.is_superuser(
-            evt.sender
-        ):
-            await evt.reply(
-                _(
-                    "You must be in the {role} role to add a role in the {category}"
-                    "category"
-                ).format(role=parent_category.admin_role, category=parent_category)
-            )
-            return
 
         try:
-            self.db.role.create(name, emoji, parent_category, author)
+            self.db.role.create(name, emoji, category, author)
         except IntegrityError as e:
             self.db.session.rollback()
             if "role.name" in str(e):
