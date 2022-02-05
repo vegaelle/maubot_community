@@ -28,6 +28,6 @@ jobs:
     - name: Build Maubot plugin
       run: mbc build
     - name: Archive plugin file
-        uses: actions/upload-artifact@v2
-        with:
-          name: space.gluten.community-*.mbp
+      uses: actions/upload-artifact@v2
+      with:
+        name: space.gluten.community-*.mbp
