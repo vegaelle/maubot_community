@@ -15,7 +15,7 @@ integration.
 
 ## Admin commands
 - `!space`
-    - `add <name> <visibility> <required_role> <parent>`: Create a space (or, if
+    - `add <name> <visibility> <required_role> [parent]`: Create a space (or, if
       it exists and the bot is already an admin there, registers it in the
       database). Visibility is one of "public", "space" (only if it has a
       parent space) or "private", the role name can be set (or be "none") if
@@ -28,7 +28,7 @@ integration.
     - `description <space_id> <desc>`: changes the description of a space
     - `image <space_id> <mxc_id>`: changes the image of the space
     - `required_role <space_id> <role>`: changes the required role of the space
-    - `welcome_room <space_id> <room_id>`: sets the specified room as the welcome
+    - `welcome_room <space_id> [room_id]`: sets the specified room as the welcome
       room of the space (in which newcomers can be invited in the space). If
       the room_id is omitted, changes the space so it doesn’t have any welcome
       room
@@ -56,12 +56,12 @@ integration.
     - `delete <room_id>`: ask confirmation, then, if the **same** user reacts a
       specific emoji, kick everyone out of the room and deletes it 
 - `!role_category`
-    - `add <name> <admin_role> <parent>`: creates a role category. The user must
+    - `add <name> <admin_role> [parent]`: creates a role category. The user must
       have the admin_role of the parent category if applicable
-    - `add_transient <name> <admin_role> <parent>`: creates a transient role category.
+    - `add_transient <name> <admin_role> [parent]`: creates a transient role category.
       Same rules as `!role_category add`
-    - `set_parent <name> <parent>`: changes the hierarchy of the category. If the
-      new parent is not "none", the user must be part of the parent’s
+    - `set_parent <name> [parent]`: changes the hierarchy of the category. If the
+      new parent is present, the user must be part of the parent’s
       admin_role
     - `admin_role <name> <role>`: changes the admin role of the category. The
       user must be part of both old and new roles
@@ -77,7 +77,7 @@ integration.
       doesn’t contain any roles directly, the command fails
 - `!role`
     - `add <name> <emoji> <category>`: creates a role. The emoji must be unique
-      in this category (for the role menus). The category can be left blank. If
+      in this category (for the role menus). If
       there are role menus containing this category, they’re deactivated and
       the bot warns the user about hem.
     - `description <role> <desc>`: changes the description of a role. If there
@@ -98,25 +98,23 @@ integration.
       this role, or it isn’t used as a required role or admin role anywhere. If
       there are role menus containing this role, they’re deactivated and the
       bots warns the user about them.
-    - `assign <user> <role> <space>`: adds the requested role to the user, in the
+    - `assign <user> <role> [space]`: adds the requested role to the user, in the
       given space if needed (aka if the role isn’t transient). The issuer
       must have the admin role of the category, and have the space
       required_role if needed
-    - `unassign <user> <role> <space>`: removes the requested role for the user,
+    - `unassign <user> <role> [space]`: removes the requested role for the user,
       in the given space if needed (aka if the role isn’t transient). The
       issuer must have the admin role of the category, and have the space
       required_role if needed
-    - `menu <role_category> <room> <prompt>`: prints the role chooser menu in the
-      chosen room, and listen to reacts to assign roles. If an existing menu
-      for this category and this room exists, it’s deactivated
     - `activate <role>`: makes role usable. If there are role menus containing
       this role, they’re deactivated and the bot warns the user about them.
     - `deactivate <role>`: makes role unusable, **if** nobody has it. If there
       are role menus containing this role, they’re deactivated and the bot
       warns the user about them.
 - `!roles <user>`: prints the chosen user active roles
-- `!reinvite`: checks the active roles of the user and invites them back to
-  spaces and rooms they’re not in
+- `!reinvite [user]`: checks the active roles of the user and invites them back to
+  spaces and rooms they’re not in. If a user is specified, it must be run with the
+  correct privileges
 
 ### Commands that need confirmation
 
@@ -140,7 +138,7 @@ has the admin_role of the category.
 - `!validate <user>`: if the current room is a welcome room for a space, grants
   the user the required role for this space and invites them in
 - `!roles`: prints the user actuve roles in a direct message
-- `!admin <duration>`: grants (if they have the required permission) a higher
+- `!admin [duration]`: grants (if they have the required permission) a higher
   powerlevel for the current room for a specific duration, then demotes them
 
 # Config
