@@ -30,4 +30,5 @@ jobs:
     - name: Archive plugin file
       uses: actions/upload-artifact@v2
       with:
-        name: space.gluten.community-*.mbp
+        name: Maubot plugin
+        path: space.gluten.community-*.mbp
