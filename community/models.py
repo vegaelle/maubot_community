@@ -51,7 +51,7 @@ class User(Base):
 
     @classmethod
     def get_or_create(cls, **kwargs) -> "User":
-        instance = cls._db.session.query(cls).filter_by(**kwargs).first()
+        instance = cls._db.session.query(cls).filter_by(**kwargs).join(Role).first()
         if instance:
             return instance
         if "active" not in kwargs:

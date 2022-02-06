@@ -17,6 +17,7 @@ from . import validators, models
 class CommunityPlugin(Plugin):
     db: CommunityDatabase
     config: CommunityConfig
+    sender_user: models.User
 
     @classmethod
     def get_config_class(cls) -> Type[BaseProxyConfig]:
@@ -58,8 +59,9 @@ class CommunityPlugin(Plugin):
     ) -> None:
         if user is not None:
             if not self.db.user.from_mxid(evt.sender).has_perm("get", "role"):
-                await evt.reply(_("You do not have the permission to do this"))
-                return
+                raise command.CommandFailure(
+                    _("You do not have the permission to do this")
+                )
             mxid = UserID(f"@{user[0]}:{user[1]}")
         else:
             mxid = evt.sender
@@ -89,18 +91,15 @@ class CommunityPlugin(Plugin):
         transient: bool,
     ):
 
-        author = self.db.user.get_or_create(matrix_id=evt.sender)
         try:
             self.db.rolecategory.create(
-                name, admin_role, parent, transient, author
+                name, admin_role, parent, transient, self.sender_user
             )
         except IntegrityError:
-            self.db.session.rollback()
-            await evt.reply(
+            raise command.CommandFailure(
                 _("The role category {category} already exists.").format(category=name)
             )
-            return
-        await evt.reply(
+        raise command.CommandFailure(
             _("The role category {category} has been created").format(category=name)
         )
 
@@ -108,9 +107,7 @@ class CommunityPlugin(Plugin):
     @arguments(
         "add_rolecategory",
         name=Argument("category name"),
-        admin_role=Argument(
-            "admin role name", validator=validators.valid_author_role
-        ),
+        admin_role=Argument("admin role name", validator=validators.valid_author_role),
         parent=Argument(
             "parent category name",
             required=False,
@@ -118,8 +115,11 @@ class CommunityPlugin(Plugin):
         ),
     )
     async def role_category_add(
-        self, evt: MaubotMessageEvent, name: str, admin_role: models.Role, parent:
-        Optional[models.RoleCategory]
+        self,
+        evt: MaubotMessageEvent,
+        name: str,
+        admin_role: models.Role,
+        parent: Optional[models.RoleCategory],
     ):
         await self.create_rolecategory(evt, name, admin_role, parent, False)
 
@@ -129,9 +129,7 @@ class CommunityPlugin(Plugin):
     @arguments(
         "add_rolecategory",
         name=Argument("category name"),
-        admin_role=Argument(
-            "admin role name", validator=validators.valid_author_role
-        ),
+        admin_role=Argument("admin role name", validator=validators.valid_author_role),
         parent=Argument(
             "parent category name",
             required=False,
@@ -139,8 +137,11 @@ class CommunityPlugin(Plugin):
         ),
     )
     async def role_category_add_transient(
-        self, evt: MaubotMessageEvent, name: str, admin_role: models.Role, parent:
-        Optional[models.RoleCategory]
+        self,
+        evt: MaubotMessageEvent,
+        name: str,
+        admin_role: models.Role,
+        parent: Optional[models.RoleCategory],
     ):
         await self.create_rolecategory(evt, name, admin_role, parent, True)
 
@@ -152,33 +153,31 @@ class CommunityPlugin(Plugin):
     @arguments(
         "add_role",
         name=Argument("role name"),
-        emoji=Argument(
-            parser=emoji_argument
-        ),
+        emoji=Argument(parser=emoji_argument),
         category=Argument(
             required=False,
             validator=validators.valid_rolecategory,
         ),
     )
     async def role_add(
-        self, evt: MaubotMessageEvent, name: str, emoji: str, category:
-        Optional[models.RoleCategory]
+        self,
+        evt: MaubotMessageEvent,
+        name: str,
+        emoji: str,
+        category: Optional[models.RoleCategory],
     ):
-        author = self.db.user.get_or_create(matrix_id=evt.sender)
-
         try:
-            self.db.role.create(name, emoji, category, author)
+            self.db.role.create(name, emoji, category, self.sender_user)
         except IntegrityError as e:
-            self.db.session.rollback()
             if "role.name" in str(e):
-                await evt.reply(_("The role {role} already exists").format(role=name))
-                return
+                raise command.CommandFailure(
+                    _("The role {role} already exists").format(role=name)
+                )
             elif "role.emoji" in str(e):
-                await evt.reply(
+                raise command.CommandFailure(
                     _(
                         "A role already has the emoji {emoji} in the same category"
                     ).format(emoji=emoji)
                 )
-                return
             raise e
         await evt.reply(_("The role {role} has been created").format(role=name))

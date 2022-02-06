@@ -4,7 +4,6 @@ from typing import (
     List,
     Optional,
     Callable,
-    TypeVar,
     Any,
     Iterable,
     Optional,
@@ -28,7 +27,6 @@ if TYPE_CHECKING:
 
 
 T = Callable[..., Awaitable]
-
 
 
 class CommunityConfig(BaseProxyConfig):
@@ -76,28 +74,37 @@ def arguments(required_perm: str=None, **arguments: Argument) -> Callable[[T], T
     def decorator(func: T) -> T:
         @wraps(func)
         async def decorated(self: "CommunityPlugin", evt: MaubotMessageEvent, *args, **kwargs):
-            for arg_name, arg in arguments.items():
-                if arg.validator:
-                    if arg_name in kwargs:
-                        arg_raw = kwargs[arg_name]
-                        if arg.kwargs.get('required', True) or arg_raw:
-                            try:
-                                arg_value = arg.validator(self, evt, arg_raw)
-                            except validators.ValidationError as e:
-                                await evt.reply(str(e))
-                                return
-                        else:
-                            arg_value = arg_raw
-                        kwargs[arg_name] = arg_value
-                    else:
-                        raise ValueError(f'Missing argument: {arg_name}')
+            committed = False
+            # with self.db.session.begin(subtransactions=True):
             try:
-                if required_perm:
-                    validators.check_perm(self, evt, required_perm)
-                await func(self, evt, *args, **kwargs)
-            except validators.CommandPermissionError:
-                await evt.reply(_("You do not have the permission to do this"))
-                return
+                self.sender_user = self.db.user.get_or_create(matrix_id=evt.sender)
+                for arg_name, arg in arguments.items():
+                    if arg.validator:
+                        if arg_name in kwargs:
+                            arg_raw = kwargs[arg_name]
+                            if arg.kwargs.get('required', True) or arg_raw:
+                                try:
+                                    arg_value = arg.validator(self, evt, arg_raw)
+                                except validators.ValidationError as e:
+                                    await evt.reply(str(e))
+                                    return
+                            else:
+                                arg_value = arg_raw
+                            kwargs[arg_name] = arg_value
+                        else:
+                            raise ValueError(f'Missing argument: {arg_name}')
+                try:
+                    if required_perm:
+                        validators.check_perm(self, evt, required_perm)
+                    await func(self, evt, *args, **kwargs)
+                    self.db.session.commit()
+                    committed = True
+                except validators.CommandPermissionError:
+                    await evt.reply(_("You do not have the permission to do this"))
+                    return
+            finally:
+                if not committed:
+                    self.db.session.rollback()
 
         decorated_var = decorated  # avoiding shadowing warnings
         for arg_name, arg in reversed(arguments.items()):

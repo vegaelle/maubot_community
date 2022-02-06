@@ -25,7 +25,7 @@ def check_perm(bot: "CommunityPlugin", evt: MaubotMessageEvent, permission: str)
 def valid_author_role(
     bot: "CommunityPlugin", evt: MaubotMessageEvent, val: str
 ) -> "Role":
-    author_roles = bot.db.user.get_roles(evt.sender)
+    author_roles = bot.sender_user.roles
     role = bot.db.role.get(name=val)
     if not role:
         raise ValidationError(_("The role {role} does not exist").format(role=val))
@@ -39,7 +39,7 @@ def valid_author_role(
 def valid_rolecategory(
     bot: "CommunityPlugin", evt: MaubotMessageEvent, val: str
 ) -> "RoleCategory":
-    author_roles = bot.db.user.get_roles(evt.sender)
+    author_roles = bot.sender_user.roles
     role_category = bot.db.rolecategory.get(name=val)
     if not role_category:
         raise ValidationError(
